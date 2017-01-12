@@ -6,7 +6,7 @@
 
  * Creation Date : 11-01-2017
 
- * Last Modified : Πεμ 12 Ιαν 2017 08:10:38 μμ EET
+ * Last Modified : Πεμ 12 Ιαν 2017 10:10:55 μμ EET
 
  * Created By :  Stamatios Anoustis
 
@@ -166,7 +166,7 @@ void minHeapify(struct MinHeap* minHeap,int index) {
     minHeap->position[smallestNode->vertex] = index;
     minHeap->position[indexNode->vertex] = smallest;
     //Swap min heap nodes
-    swapMinHeapNode(&smallestNode, &indexNode);
+    swapMinHeapNode(&minHeap->array[smallest] , &minHeap->array[index] );
     //Swap rest nodes
     minHeapify(minHeap, smallest);
 
@@ -241,7 +241,7 @@ bool isInMinHeap(struct MinHeap *minHeap, int vertex) {
 
 //A utility function used to compute the cost of the 
 //constructed MST
-/*int cost(struct Graph* graph,int parent[]) {
+int cost(struct Graph* graph,int parent[]) {
   
   int sum = 0;	
   int V = graph->V;	
@@ -260,17 +260,21 @@ bool isInMinHeap(struct MinHeap *minHeap, int vertex) {
 
   return sum;
 
-} */
+} 
 
 // A utility function used to print the constructed MST
- void printArr(int arr[], int n)
- {
-     for (int i = 1; i < n; ++i)
-             printf("%d - %d\n", arr[i], i);
-             }
+/*void printArr(int arr[], int n) {
+ 
+  for (int i = 1; i < n; ++i) {
+
+  printf("%d - %d\n", arr[i], i);
+
+  }
+
+}*/
     	  
 
-void MST_PRIM(struct Graph* graph) {
+int MST_PRIM(struct Graph* graph) {
 
   int V = graph->V;  // Get the number of vertices in graph
   int parent[V];  // Array to store constructed MST
@@ -323,9 +327,8 @@ void MST_PRIM(struct Graph* graph) {
 
   }
 
-  printArr(parent, V);
- // return cost(graph, parent);
-
+ // printArr(parent, V);
+ return cost(graph, parent);   
 }  
 
 int main (int argc, char** argv) {
@@ -340,10 +343,12 @@ int main (int argc, char** argv) {
   scanf( "%d", &N);
   scanf( "%d", &K);
   scanf( "%d", &M);
+  struct Graph* telnet = newGraph(N + 1);
   for ( int i = 0; i < K; i++) {
 
     scanf( "%d", &index);
-    scanf( "%d", &B[index - 1]);
+    scanf( "%d", &weight);
+    addEdge(telnet, N, index - 1, weight);
 
   }
 
@@ -353,11 +358,21 @@ int main (int argc, char** argv) {
     scanf( "%d", &index1);	  
     scanf( "%d", &index2);	  
     scanf( "%d", &weight);
-    addEdge(net, index1 - 1, index2 - 1, weight);    
+    addEdge(net, index1 - 1, index2 - 1, weight);
+    addEdge(telnet, index1 - 1, index2 -1, weight);    
 
   }
 
-   MST_PRIM(net); 
+  if (MST_PRIM(net) < MST_PRIM(telnet)){
+
+    printf("%d\n", MST_PRIM(net));
+  
+  } else {
+
+  printf("%d\n", MST_PRIM(telnet));
+
+  }
+
   return 0;
 
 }
