@@ -6,7 +6,7 @@
 
  * Creation Date : 11-01-2017
 
- * Last Modified : Τετ 11 Ιαν 2017 07:03:17 μμ EET
+ * Last Modified : Πεμ 12 Ιαν 2017 04:49:03 μμ EET
 
  * Created By :  Stamatios Anoustis
 
@@ -26,6 +26,7 @@ int EXIT_STATUS = 0;
 struct AdjListNode {
 
   int dest;
+  int weight;
   struct AdjListNode* next;
 
 };
@@ -47,10 +48,11 @@ struct Graph {
 };  
 
 //A utility function to create a new adjacency list node
-struct AdjListNode* newAdjListNode(int dest) {
+struct AdjListNode* newAdjListNode(int dest, int weight) {
 
   struct AdjListNode* newNode = (struct AdjListNode*) malloc(sizeof(struct AdjListNode));
   newNode->dest = dest;
+  newNode->weight = weight;
   newNode->next = NULL;
   return newNode;
 
@@ -74,9 +76,9 @@ struct Graph* newGraph(int V) {
 };
 
 //A utility function to add an edge to an undirected graph
-void addEdge(struct Graph* graph, int src, int dest) {
+void addEdge(struct Graph* graph, int src, int dest, int weight) {
 
-  struct AdjListNode* newNode = newAdjListNode(dest);
+  struct AdjListNode* newNode = newAdjListNode(dest, weight);
   newNode->next = graph->array[src].head;
   graph->array[src].head = newNode;
 
@@ -87,72 +89,238 @@ void addEdge(struct Graph* graph, int src, int dest) {
 
 };
 
-// A utility function to print the adjacenncy list representation of graph
-void printGraph(struct Graph* graph) {
+//structure to represent a min heap node
+struct MinHeapNode {
 
-  for (int i = 0; i < graph->V; i++) {
-    struct AdjListNode* pCrawl = graph->array[i].head;
-    printf("\n Adjacency list of vertex %d\n head ", i);
-    while (pCrawl) {
+  int vertex;
+  int key;
 
-      printf("-> %d", pCrawl->dest);
-      pCrawl = pCrawl->next;
+}
 
-    }
+//structure to represent a min heap
+struct MinHeap {
 
-    printf("\n");
+  int capacity;
+  int size;
+  int *position;
+  struct MinHeapNode** array;
+
+}
+
+//utility function to create a min heap node
+struct MinHeapNode* newMinHeapNode(int vertex, int key) {
+
+  struct MinHeapNode* minHeapNode = (struct MinHeapNode*) malloc(sizeof(struct MinHeapNode));
+  minHeapNode->vertex = vertex;
+  minHeapNode->key = key;
+
+}  
+
+//A utillity function  to create a min heap
+struct MinHeap* newMinHeap(int capacity) {
+
+  struct MinHeap* minHeap = (struct MinHeap*) malloc(sizeof(struct MinHeap));
+  minHeap->capacity = capacity;
+  minHeap->size = 0;
+  minHeap->position = (int*) malloc(capacity*sizeof(int));
+  minHeap->array = (struct MinHeapNode**) malloc(capacity*sizeof(struct MinHeapNode*));
+  return minHeap;
+
+}
+
+//A utillity function to swap min heap nodes 
+void swapMinHeapNode(struct MinHeapNode** node1, struct MinHeapNode** node2) {
+
+  struct MinHeapNode* temp = *node1;
+  *node1 = *node2;
+  *node2 = temp;
+
+}  
+
+//A utillity function to heapify at a given index
+void minHeapify(struct MinHeap* minHeap,int index) {
+
+  int smallest = index;
+  int left = 2*index + 1; 
+  int right = 2*index + 2;
+  if ((left < minHeap->size) && (minHeap->array[left].key < minHeap->array[smallest].key)) {
+
+    smallest = left;
+
+  } 
+  
+  if ((right < minHeap->size) && (minHeap->array[right].key < minHeap->array[smallest].key)) {
+
+    smallest = right;
+
+  } 
+
+  if (smallest != index) {
+
+    //The nodes to be swapped in min heap
+    struct MinHeapNode* smallestNode = minHeap->array[smallest];
+    struct MinHeapNode* indexNode = minHeap->array[index];
+    //Swap positions
+    minHeap->position[smallestNode->vertex] = index;
+    minHeap->position[indexNode->vertex] = smallest;
+    //Swap min heap nodes
+    swapMinHeapNode(&smallestNode, &indexNode);
+    //Swap rest nodes
+    minHeapify(minHeap, smallest);
 
   }
 
-};
+}  
+
+// A utility function to check if the given minHeap is ampty or not
+int isEmpty(struct MinHeap* minHeap) {
+
+  return minHeap->size == 0;
+     
+}
+
+// Standard function to extract minimum node from heap
+struct MinHeapNode* extractMin(struct MinHeap* minHeap) {
+
+  if (isEmpty(minHeap)) {
+
+    return NULL;
+
+  }    
+  
+  // The root node is the minimum I need to extract
+  struct MinHeapNode* root = minHeap->array[0];
+  // Replace root node with last node so as to remain a heap
+  struct MinHeapNode* lastNode = minHeap->array[minHeap->size - 1];
+  minHeap->array[0] = lastNode;                                    
+  // Update position of last node
+  minHeap->position[root->v] = minHeap->size-1;
+  minHeap->position[lastNode->v] = 0;                                                 
+  //Reduce heap size and heapify root
+  minHeap->size--;
+  minHeapify(minHeap, 0);                                                              
+  return root;
+                                        
+}
+
+//Standard function to decrease key of a given vertex
+void decreaseKey(struct MinHeap* minHeap, int vertex, int key) {
+
+  //Get index of vertex in heap array
+  int index = minHeap->position[vertex]
+  //Get the node and update its key value
+  minHeap->array[index]->key = key;
+  //Up Heap while not heapified
+  while(index && (minHeap->array[index]->key < minHeap->array[(index - 1) / 2]->key)) {
+
+    // Swap this node with its parent
+    minHeap->pos[minHeap->array[index]->vertex] = (index-1)/2;
+    minHeap->pos[minHeap->array[(index-1)/2]->vertex] = index;
+    swapMinHeapNode(&minHeap->array[index],  &minHeap->array[(index - 1) / 2]);
+    //move to parent index
+    index = (index - 1)/2;
+  
+  }
+
+}
+
+// A utility function to check if a given vertex  is in min heap or not
+bool isInMinHeap(struct MinHeap *minHeap, int vertex) {
+  
+  if (minHeap->position[v] < minHeap->size) {
+
+    return true;
+
+  }
+  
+  return false;
+
+}
+
+void MST_PRIM(struct Graph* graph) {
+
+  int V = graph->V;  // Get the number of vertices in graph
+  int parent[V];  // Array to store constructed MST
+  int key[V];  // Key values used to pick minimum weight edge in cut
+  //Min heap represents set E
+  struct MinHeap* minHeap = newMinHeap(V);
+  //Initiallise min heap with all vertices with inf key except first vertex
+  for (v = 1; v < V; v++) {
+
+    parent[v] = -1;
+    key[v] = INT_MAX;
+    minHeap->array[v] = newMinHeapNode(v, key[v]);
+    minHeap->position[v] = v;
+
+  }
+
+  //Set key of first vertex zero
+  parent[0] = -1;
+  key[0] = 0;
+  minHeap->array[0] = newMinHeapNode(0, key[0]);
+  minHeap->position[0] = 0;
+  //Initialise size of minHeap to V
+  minHeap->size = V;
+  //Min heap contains all nodes not yet included in MST
+  while (!isEmpty(minHeap)) {
+
+    //Extract light weight edge crossing the cut
+    struct MinHeapNode* minHeapNode = extractMin(minHeap); //get the next u
+    int u = minHeapNode->vertex;  //Store the extracted vertex
+    //Traverse all adjacent nodes v of u end update their key values
+    struct AdjListNode* adjListNode = graph->array[u].head;
+    while (adjListNode != NULL) {
+
+      int v = adjListNode->dest;
+      // If v is not yet included in MST and weight of u-v is
+      // less than key value of v, then update key value and
+      // parent of v (v in Heap and w(u,v) < key[v] )
+      if ( isInMinHeap(v) && (adjListNode->wieght < key[v]) ) {
+
+        key[v] = adjListNode->wieght;
+	parent[v] = u;
+        decreaseKey(minHeap, v, key[v]);
+
+      }
+
+      //Get the next v
+      v = adjListNode.next;
+
+    }
+
+  }
+
+}  
 
 int main (int argc, char** argv) {
 
-	int N;  //number of planets;suppose 2 <= N <= 10000
-	int K;  //number of teportable planets 0 <= K <= N
-	int M;  //number of transmission channels N - 1 <= M <= 500000
-	int index;  //the index of teleportable planet
-	int index1;  //the index of the one connected planet
-	int index2;  //the index of the other connected planet
-	scanf( "%d", &N);
-	scanf( "%d", &K);
-	scanf( "%d", &M);
-	for ( int i = 0; i < K; i++) {
+  int N;  //number of planets;suppose 2 <= N <= 10000
+  int K;  //number of teportable planets 0 <= K <= N
+  int M;  //number of transmission channels N - 1 <= M <= 500000
+  int index;  //the index of teleportable planet
+  int index1;  //the index of the one connected planet
+  int index2;  //the index of the other connected planet
+  int weight;
+  scanf( "%d", &N);
+  scanf( "%d", &K);
+  scanf( "%d", &M);
+  for ( int i = 0; i < K; i++) {
 
-		scanf( "%d", &index);
-		scanf( "%d", &B[index - 1]);
+    scanf( "%d", &index);
+    scanf( "%d", &B[index - 1]);
 
-	}
+  }
 
-	for ( int i = 0; i < M; i++) {
+  struct Graph* net = newGraph(N);
+  for ( int i = 0; i < M; i++) {
 
-		scanf( "%d", &index1);	  
-		scanf( "%d", &index2);	  
-		scanf( "%d", &A[index1 - 1][index2 - 1]);
-		A[index2 - 1][index1 - 1] = A[index1 - 1][index2 - 1];    
+    scanf( "%d", &index1);	  
+    scanf( "%d", &index2);	  
+    scanf( "%d", &weight);
+    addEdge(net, index1, index2, weight);    
 
-	}
+  }
 
-	for ( int i = 0; i < N; i++) {
-
-		printf("%d ", B[i]);
-
-	}
-
-	printf("\n");
-	printf("\n");
-
-	for ( int i = 0; i < N; i++) {
-
-		for ( int j = 0; j < N; j++) {	  
-
-			printf("%d ", A[i][j]);
-
-		}  
-
-		printf("\n");
-
-	} 
-
+  	
 }
 
