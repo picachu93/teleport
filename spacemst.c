@@ -6,7 +6,7 @@
 
  * Creation Date : 11-01-2017
 
- * Last Modified : Πεμ 12 Ιαν 2017 04:49:03 μμ EET
+ * Last Modified : Πεμ 12 Ιαν 2017 08:10:38 μμ EET
 
  * Created By :  Stamatios Anoustis
 
@@ -15,13 +15,14 @@
 /*------------------Includes and global definitions---------------------*/
 #include <stdio.h> 
 #include <stdlib.h>
+#include <stdbool.h>
+#include <limits.h>
 
 int B[10000];  //costs of teleport installation
 int A[10000][10000]; //costs of direct transmission 
 int EXIT_STATUS = 0;
 
 /*-----------------Main Code-------------------------------------------*/
-
 //A structure to represent an adjacency list node
 struct AdjListNode {
 
@@ -56,7 +57,7 @@ struct AdjListNode* newAdjListNode(int dest, int weight) {
   newNode->next = NULL;
   return newNode;
 
-};
+}
 
 //A utility function to create a new Graph of V nodes
 struct Graph* newGraph(int V) {
@@ -73,7 +74,7 @@ struct Graph* newGraph(int V) {
 
   return newGraph;
 
-};
+}
 
 //A utility function to add an edge to an undirected graph
 void addEdge(struct Graph* graph, int src, int dest, int weight) {
@@ -83,11 +84,11 @@ void addEdge(struct Graph* graph, int src, int dest, int weight) {
   graph->array[src].head = newNode;
 
   //The symmetric work must be done for undirected graph
-  newNode = newAdjListNode(src);
+  newNode = newAdjListNode(src, weight);
   newNode->next = graph->array[dest].head;
   graph->array[dest].head = newNode;
 
-};
+}
 
 //structure to represent a min heap node
 struct MinHeapNode {
@@ -95,7 +96,7 @@ struct MinHeapNode {
   int vertex;
   int key;
 
-}
+};
 
 //structure to represent a min heap
 struct MinHeap {
@@ -105,7 +106,7 @@ struct MinHeap {
   int *position;
   struct MinHeapNode** array;
 
-}
+};
 
 //utility function to create a min heap node
 struct MinHeapNode* newMinHeapNode(int vertex, int key) {
@@ -113,6 +114,7 @@ struct MinHeapNode* newMinHeapNode(int vertex, int key) {
   struct MinHeapNode* minHeapNode = (struct MinHeapNode*) malloc(sizeof(struct MinHeapNode));
   minHeapNode->vertex = vertex;
   minHeapNode->key = key;
+  return minHeapNode;
 
 }  
 
@@ -143,13 +145,13 @@ void minHeapify(struct MinHeap* minHeap,int index) {
   int smallest = index;
   int left = 2*index + 1; 
   int right = 2*index + 2;
-  if ((left < minHeap->size) && (minHeap->array[left].key < minHeap->array[smallest].key)) {
+  if ((left < minHeap->size) && (minHeap->array[left]->key < minHeap->array[smallest]->key)) {
 
     smallest = left;
 
   } 
   
-  if ((right < minHeap->size) && (minHeap->array[right].key < minHeap->array[smallest].key)) {
+  if ((right < minHeap->size) && (minHeap->array[right]->key < minHeap->array[smallest]->key)) {
 
     smallest = right;
 
@@ -194,8 +196,8 @@ struct MinHeapNode* extractMin(struct MinHeap* minHeap) {
   struct MinHeapNode* lastNode = minHeap->array[minHeap->size - 1];
   minHeap->array[0] = lastNode;                                    
   // Update position of last node
-  minHeap->position[root->v] = minHeap->size-1;
-  minHeap->position[lastNode->v] = 0;                                                 
+  minHeap->position[root->vertex] = minHeap->size-1;
+  minHeap->position[lastNode->vertex] = 0;                                                 
   //Reduce heap size and heapify root
   minHeap->size--;
   minHeapify(minHeap, 0);                                                              
@@ -207,15 +209,15 @@ struct MinHeapNode* extractMin(struct MinHeap* minHeap) {
 void decreaseKey(struct MinHeap* minHeap, int vertex, int key) {
 
   //Get index of vertex in heap array
-  int index = minHeap->position[vertex]
+  int index = minHeap->position[vertex];
   //Get the node and update its key value
   minHeap->array[index]->key = key;
   //Up Heap while not heapified
   while(index && (minHeap->array[index]->key < minHeap->array[(index - 1) / 2]->key)) {
 
     // Swap this node with its parent
-    minHeap->pos[minHeap->array[index]->vertex] = (index-1)/2;
-    minHeap->pos[minHeap->array[(index-1)/2]->vertex] = index;
+    minHeap->position[minHeap->array[index]->vertex] = (index-1)/2;
+    minHeap->position[minHeap->array[(index-1)/2]->vertex] = index;
     swapMinHeapNode(&minHeap->array[index],  &minHeap->array[(index - 1) / 2]);
     //move to parent index
     index = (index - 1)/2;
@@ -227,7 +229,7 @@ void decreaseKey(struct MinHeap* minHeap, int vertex, int key) {
 // A utility function to check if a given vertex  is in min heap or not
 bool isInMinHeap(struct MinHeap *minHeap, int vertex) {
   
-  if (minHeap->position[v] < minHeap->size) {
+  if (minHeap->position[vertex] < minHeap->size) {
 
     return true;
 
@@ -237,6 +239,37 @@ bool isInMinHeap(struct MinHeap *minHeap, int vertex) {
 
 }
 
+//A utility function used to compute the cost of the 
+//constructed MST
+/*int cost(struct Graph* graph,int parent[]) {
+  
+  int sum = 0;	
+  int V = graph->V;	
+  for (int u = 1; u < V; u++) {
+  
+    int v = parent[u];
+    struct AdjListNode* adjListNode = graph->array[u].head;
+    while (v != adjListNode->dest) {
+
+      adjListNode = adjListNode->next;
+    }
+    
+    sum = sum + adjListNode->weight;
+
+  }
+
+  return sum;
+
+} */
+
+// A utility function used to print the constructed MST
+ void printArr(int arr[], int n)
+ {
+     for (int i = 1; i < n; ++i)
+             printf("%d - %d\n", arr[i], i);
+             }
+    	  
+
 void MST_PRIM(struct Graph* graph) {
 
   int V = graph->V;  // Get the number of vertices in graph
@@ -245,7 +278,7 @@ void MST_PRIM(struct Graph* graph) {
   //Min heap represents set E
   struct MinHeap* minHeap = newMinHeap(V);
   //Initiallise min heap with all vertices with inf key except first vertex
-  for (v = 1; v < V; v++) {
+  for (int v = 1; v < V; v++) {
 
     parent[v] = -1;
     key[v] = INT_MAX;
@@ -275,20 +308,23 @@ void MST_PRIM(struct Graph* graph) {
       // If v is not yet included in MST and weight of u-v is
       // less than key value of v, then update key value and
       // parent of v (v in Heap and w(u,v) < key[v] )
-      if ( isInMinHeap(v) && (adjListNode->wieght < key[v]) ) {
+      if ( isInMinHeap(minHeap, v) && (adjListNode->weight < key[v]) ) {
 
-        key[v] = adjListNode->wieght;
+        key[v] = adjListNode->weight;
 	parent[v] = u;
         decreaseKey(minHeap, v, key[v]);
 
       }
 
       //Get the next v
-      v = adjListNode.next;
+      adjListNode = adjListNode->next;
 
     }
 
   }
+
+  printArr(parent, V);
+ // return cost(graph, parent);
 
 }  
 
@@ -317,10 +353,12 @@ int main (int argc, char** argv) {
     scanf( "%d", &index1);	  
     scanf( "%d", &index2);	  
     scanf( "%d", &weight);
-    addEdge(net, index1, index2, weight);    
+    addEdge(net, index1 - 1, index2 - 1, weight);    
 
   }
 
-  	
+   MST_PRIM(net); 
+  return 0;
+
 }
 
